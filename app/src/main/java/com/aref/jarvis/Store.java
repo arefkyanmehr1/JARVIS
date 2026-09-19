@@ -47,7 +47,7 @@ public class Store {
         return valid.get(i);
     }
     public synchronized void addLog(String line){log=(log==null?"":log)+"\n"+line;log=trimLog(log);save();}
-    public synchronized boolean canReply(String number){
+    public synchronized boolean seen(String number,String body){String k="seen_"+Integer.toHexString((number+"|"+body).hashCode());if(p.getBoolean(k,false))return true;p.edit().putBoolean(k,true).apply();return false;}\n    public synchronized boolean canReply(String number){
         long last=p.getLong("last_"+safe(number),0);
         return System.currentTimeMillis()-last>=60000;
     }
