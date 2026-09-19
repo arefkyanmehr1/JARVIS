@@ -1,0 +1,4 @@
+package com.aref.jarvis;
+import android.content.*;import android.telephony.*;import android.provider.Telephony;
+public class SmsReceiver extends BroadcastReceiver{
+ public void onReceive(Context c,Intent i){if(!Telephony.Sms.Intents.SMS_RECEIVED_ACTION.equals(i.getAction()))return;Store s=new Store(c);if(!s.away)return;for(SmsMessage m:Telephony.Sms.Intents.getMessagesFromIntent(i)){String from=m.getOriginatingAddress(),body=m.getMessageBody();if(from==null||body==null)continue;PendingResult pr=goAsync();new Thread(()->{try{String answer=GeminiClient.ask(s,"یک SMS جدید از شماره "+from+" دریافت شده است. متن:\n"+body+"\nقوانین کاربر:\n"+s.rules+"\nفقط متن پاسخ را تولید کن.");if(answer!=null&&!answer.startsWith("ابتدا API"))SmsManager.getDefault().sendTextMessage(from,null,answer,null,null);s.log+="\n["+from+"] "+body+"\nJARVIS: "+answer;s.save();}finally{pr.finish();}}).start();}}}
