@@ -46,7 +46,11 @@ class JarvisBackgroundService : Service() {
                 putExtra(EXTRA_SUB_ID, subscriptionId)
                 putExtra(EXTRA_SLOT_INDEX, slotIndex)
             }
-            startService(context, intent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.startForegroundService(intent)
+            } else {
+                context.startService(intent)
+            }
         }
 
         fun stop(context: Context) {
