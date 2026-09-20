@@ -3,7 +3,6 @@ package com.example
 import android.app.Application
 import com.example.data.local.AppDatabase
 import com.example.data.local.entity.ActivityLogEntity
-import com.example.data.local.entity.ApiKeyEntity
 import com.example.data.local.entity.MemoryEntity
 import com.example.data.local.entity.RuleEntity
 import com.example.data.repository.AiRepository
@@ -22,11 +21,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 class JarvisApplication : Application() {
-
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-
     val database by lazy { AppDatabase.getInstance(this) }
-
     val settingsRepository by lazy { SettingsRepository(database.appSettingDao()) }
     val logRepository by lazy { LogRepository(database.activityLogDao()) }
     val apiKeyDao by lazy { database.apiKeyDao() }
@@ -35,7 +31,6 @@ class JarvisApplication : Application() {
     val memoryRepository by lazy { MemoryRepository(database.memoryDao()) }
     val smsRepository by lazy { SmsRepository(database.smsDao()) }
     val chatRepository by lazy { ChatRepository(database.chatDao()) }
-
     val smsSenderHelper by lazy { SmsSenderHelper(this) }
     val notificationHelper by lazy { NotificationHelper(this) }
 
@@ -61,7 +56,6 @@ class JarvisApplication : Application() {
 
     private fun initializeDefaultData() {
         applicationScope.launch {
-            // Seed initial memory if empty
             val initialMemories = database.memoryDao().getRecentMemories(1)
             if (initialMemories.isEmpty()) {
                 database.memoryDao().insertMemory(
@@ -74,42 +68,9 @@ class JarvisApplication : Application() {
                 )
             }
 
-            // Seed initial DeepSeek keys if empty
-            val initialKeys = database.apiKeyDao().getActiveKeys()
-            if (initialKeys.isEmpty()) {
-                database.apiKeyDao().insertKey(
-                    ApiKeyEntity(
-                        name = "کلید اصلی DeepSeek (Flash)",
-                        apiKey = "sk-d0833a00b40d4b3ebf6b1e55adf569b0",
-                        maskedKey = AiRepository.maskKey("sk-d0833a00b40d4b3ebf6b1e55adf569b0"),
-                        provider = "DEEPSEEK",
-                        isEnabled = true,
-                        priority = 3
-                    )
-                )
-                database.apiKeyDao().insertKey(
-                    ApiKeyEntity(
-                        name = "کلید رزرو DeepSeek ۱",
-                        apiKey = "sk-4ca4b46aa80b4e5ca990c028a5334057",
-                        maskedKey = AiRepository.maskKey("sk-4ca4b46aa80b4e5ca990c028a5334057"),
-                        provider = "DEEPSEEK",
-                        isEnabled = true,
-                        priority = 2
-                    )
-                )
-                database.apiKeyDao().insertKey(
-                    ApiKeyEntity(
-                        name = "کلید رزرو DeepSeek ۲",
-                        apiKey = "sk-cdf70e57116d4b419e2f4e44fb992250",
-                        maskedKey = AiRepository.maskKey("sk-cdf70e57116d4b419e2f4e44fb992250"),
-                        provider = "DEEPSEEK",
-                        isEnabled = true,
-                        priority = 1
-                    )
-                )
-            }
+            // Provider API keys are intentionally not hardcoded in the APK/source.
+            // They are configured by the user through the API Manager.
 
-            // Seed sample default rule if empty
             val rules = database.ruleDao().getActiveRules()
             if (rules.isEmpty()) {
                 database.ruleDao().insertRule(
@@ -137,7 +98,6 @@ class JarvisApplication : Application() {
                 )
             }
 
-            // Initial startup log
             database.activityLogDao().insertLog(
                 ActivityLogEntity(
                     type = "SYSTEM",
