@@ -1,0 +1,6 @@
+{
+  "name": "JARVIS",
+  "description": "دستیار هوشمند مدیریت پیامک و پاسخ خودکار با هوش مصنوعی ChatGPT، Gemini و DeepSeek",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
