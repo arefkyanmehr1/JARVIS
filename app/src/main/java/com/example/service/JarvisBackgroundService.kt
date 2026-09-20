@@ -82,9 +82,9 @@ class JarvisBackgroundService : Service() {
                         val m = state.delayRemainingSeconds / 60
                         val s = state.delayRemainingSeconds % 60
                         val countdown = String.format("%02d:%02d", m, s)
-                        "تحلیل سوابق و تأخیر هوشمند: ارسال به \${state.sender} در $countdown"
+                        "تحلیل سوابق و تأخیر هوشمند: ارسال به ${state.sender} در $countdown"
                     } else {
-                        "در حال تحلیل سوابق و تدوین پاسخ به \${state.sender}..."
+                        "در حال تحلیل سوابق و تدوین پاسخ به ${state.sender}..."
                     }
                 } else {
                     "پایش پیامک‌ها فعال است - آماده تحلیل بلادرنگ"
