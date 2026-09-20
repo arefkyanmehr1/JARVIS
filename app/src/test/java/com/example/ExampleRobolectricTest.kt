@@ -12,7 +12,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [36])
+@Config(sdk = [35])
 class ExampleRobolectricTest {
 
   @Test
@@ -32,25 +32,25 @@ class ExampleRobolectricTest {
 
   @Test
   fun `test api key masking`() {
-    val masked = AiRepository.maskKey("AIzaSyB1234567890abcdef")
+    val masked = AiRepository.maskKey("AIzaSyTEST1234567890abcdef")
     assertEquals("AIzaSy...cdef", masked)
-    val dsMasked = AiRepository.maskKey("sk-d0833a00b40d4b3ebf6b1e55adf569b0")
-    assertEquals("sk-d08...69b0", dsMasked)
+    val dsMasked = AiRepository.maskKey("sk-test-1234567890abcdef")
+    assertEquals("sk-tes...cdef", dsMasked)
   }
 
   @Test
   fun `test deepseek provider detection`() {
     val key = com.example.data.local.entity.ApiKeyEntity(
       name = "DeepSeek Key",
-      apiKey = "sk-d0833a00b40d4b3ebf6b1e55adf569b0",
-      maskedKey = "sk-d08...69b0",
+      apiKey = "sk-test-1234567890abcdef",
+      maskedKey = "sk-tes...cdef",
       provider = "DEEPSEEK"
     )
     org.junit.Assert.assertTrue(key.isDeepSeek())
 
     val geminiKey = com.example.data.local.entity.ApiKeyEntity(
       name = "Gemini Key",
-      apiKey = "AIzaSyB1234567890abcdef",
+      apiKey = "AIzaSyTEST1234567890abcdef",
       maskedKey = "AIzaSy...cdef",
       provider = "GEMINI"
     )
@@ -59,16 +59,16 @@ class ExampleRobolectricTest {
 
     val openAiKey = com.example.data.local.entity.ApiKeyEntity(
       name = "OpenAI Key",
-      apiKey = "sk-proj-cJS4Jxz3b0dHTydHWp2mGfpjz825DR8ZuV26AjIeQC5b1eHz",
-      maskedKey = "sk-proj...1eHz",
+      apiKey = "sk-proj-test-openai-key",
+      maskedKey = "sk-pro...-key",
       provider = "OPENAI"
     )
     org.junit.Assert.assertTrue(openAiKey.isOpenAi())
 
     val aimlKey = com.example.data.local.entity.ApiKeyEntity(
       name = "AIML Key",
-      apiKey = "d92ac29de4dfc93541a87b3e779658e6",
-      maskedKey = "d92ac29...58e6",
+      apiKey = "aiml-test-key-1234",
+      maskedKey = "aiml-test...1234",
       provider = "AIML"
     )
     org.junit.Assert.assertTrue(aimlKey.isAiml())
