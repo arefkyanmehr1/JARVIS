@@ -32,6 +32,8 @@ class JarvisProcessor(
     private val notificationHelper: NotificationHelper
 ) {
 
+    private val smsHistorySync = SmsHistorySync(context, smsRepo)
+
     companion object {
         private val _liveAnalysisState = MutableStateFlow(AiAnalysisState())
         val liveAnalysisState: StateFlow<AiAnalysisState> = _liveAnalysisState.asStateFlow()
@@ -185,8 +187,23 @@ class JarvisProcessor(
         }
 
         // 6. Deep Conversation Context & Memory Integration
-        // Fetch up to 50 recent messages from this sender to analyze conversation history & relationship
-        val recentHistory = smsRepo.getRecentMessages(sender, limit = 50)
+        // IMPORTANT: the SMS broadcast only contains the new message. If JARVIS was
+        // off when older messages arrived, they are still present in Android's SMS
+        // provider. Import that existing conversation before asking the AI to reply.
+        val importedHistoryCount = smsHistorySync.syncConversation(sender)
+        if (importedHistoryCount > 0) {
+            logRepo.log(
+                type = "SMS",
+                title = "سوابق گفت‌وگو بازیابی شد",
+                description = "$importedHistoryCount پیام قبلی از حافظه پیامک گوشی برای $sender وارد حافظه JARVIS شد.",
+                status = "SUCCESS",
+                relatedAddress = sender
+            )
+        }
+
+        // Keep the full conversation locally, but send a bounded recent window to
+        // the model so a very long SMS thread cannot overflow the AI context.
+        val recentHistory = smsRepo.getRecentMessages(sender, limit = 100)
         // Order chronologically: oldest first, latest last
         // Exclude the very last incoming message if it's already in recentHistory to avoid duplicate prompt
         val historyPairs = recentHistory.reversed()
@@ -231,7 +248,7 @@ class JarvisProcessor(
                 sender = sender,
                 contactName = contactName,
                 incomingMessage = messageBody,
-                analysisStep = "گام ۱: خواندن سوابق ۵۰ پیام و تحلیل لحن و روان‌شناختی مخاطب",
+                analysisStep = "گام ۱: خواندن سوابق ۱۰۰ پیام اخیر و تحلیل زمینه گفتگو",
                 historySummary = "در حال بازخوانی تاریخچه پیام‌ها، گویش، کلمات پرتکرار و لحن مخاطب...",
                 personaInsight = "بررسی اطلاعات بیوگرافی و وضعیت زمانی «$userName»...",
                 scheduledSendTimeStr = scheduledSendTimeStr,
@@ -250,16 +267,16 @@ class JarvisProcessor(
                 append("\n- وضعیت فعلی: «").append(currentStatus).append("» (ثبت در ").append(recordedTimeStr).append(" - ").append(diffMinutes).append(" دقیقه قبل)")
             }
             append("\n\nپیام جدید دریافتی از مخاطب: «").append(messageBody).append("»\n")
-            append("سوابق ۵۰ پیام اخیر در گفتگو پیوست شده‌اند.\n")
+            append("سوابق ۱۰۰ پیام اخیر این گفتگو پیوست شده‌اند.\n")
             append("لطفاً با دقت و به زبان فارسی در قالب ۳ بخش کوتاه تفکیک کن:\n")
-            append("تاریخچه و لحن: (تحلیل کوتاه از لحن مخاطب؛ عامیانه، محلی/لری، رسمی، شوخ، یا پرخاشگر)\n")
+            append("تاریخچه و لحن: (تحلیل کوتاه از لحن مخاطب؛ عامیانه، محلی/لری، رسمی، شوخ یا جدی)\n")
             append("ارتباط با بیو/وضعیت: (آیا نیاز به اشاره به وضعیت یا بیو هست یا اصلاً ربطی ندارد و نباید گفته شود؟)\n")
-            append("تصمیم نهایی: (استراتژی رفتار؛ مثلاً حاضر‌جوابی مؤدبانه با شوخ‌طبعی و رفاقت، بدون بی‌ادبی متقابل)")
+            append("تصمیم نهایی: (استراتژی پاسخ؛ متین، طبیعی، کوتاه و متناسب با همان گفت‌وگو؛ بدون کنایه، تحقیر، حاضر‌جوابی یا بی‌ادبی)")
         }
 
         val analysisResult = aiRepo.generateResponse(
             prompt = analysisPrompt,
-            conversationContext = historyPairs.takeLast(20),
+            conversationContext = historyPairs.takeLast(50),
             customSystemInstruction = "شما موتور تحلیل ادراکی و فرایند تفکر (Thinking Engine) هوش مصنوعی هستید. استدلال دقیق، روان و تفکیک‌شده به زبان فارسی ارائه دهید."
         )
 
@@ -321,7 +338,7 @@ class JarvisProcessor(
             append("\n\nلحن و حس پاسخ: ").append(tone)
             append("\nاصول مهم رفتاری و گفتاری:")
             append("\n۱. شما یک انسان واقعی به نام «").append(userName).append("» هستی. هرگز و ابداً نگو ربات، هوش مصنوعی، مدل زبانی یا دستیار هستی.")
-            append("\n۲. لحن طرف را بخوان: اگر با گویش یا لهجه محلی (مثلاً لری، لکی، کردی، ترکی و...)، عامیانه، یا حتی بی‌ادبی پیام داد: هرگز عصبانی نشو و هرگز بی‌ادبی نکن؛ با خنده، حاضر‌جوابی جذاب، شوخ‌طبعی و احترام صمیمانه جواب بده.")
+            append("\n۲. لحن طرف را بخوان، اما هیچ‌وقت لحن تند یا توهین‌آمیز را تقلید نکن. اگر مخاطب عامیانه یا بی‌ادب بود، پاسخ همچنان آرام، محترمانه، کوتاه و طبیعی باشد؛ بدون طعنه، تحقیر، سرزنش یا جواب زبانی.")
             append("\n۳. پیام‌ها کوتاه و باورپذیر باشند؛ مثل یک اس‌ام‌اس واقعی در گوشی.")
 
             if (memoryContext.isNotBlank()) {
@@ -332,7 +349,7 @@ class JarvisProcessor(
                 append("\n").append(customRulePrompt)
             }
             if (historyPairs.isNotEmpty()) {
-                append("\n\nسوابق ۵۰ پیام پیشین این گفتگو ارسال شده‌اند؛ جریان مکالمه را حفظ کن.")
+                append("\n\nسوابق ۱۰۰ پیام اخیر این گفتگو ارسال شده‌اند؛ جریان مکالمه، موضوعات قبلی و پاسخ‌های قبلی را حفظ کن.")
             }
         }
 
