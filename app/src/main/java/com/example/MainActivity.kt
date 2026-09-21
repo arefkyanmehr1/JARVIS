@@ -95,6 +95,7 @@ fun JarvisMainApp(viewModel: JarvisViewModel) {
     val activeSubScreen by viewModel.activeSubScreen.collectAsState()
     val isAutoReplyOn by viewModel.isAutoReplyEnabled.collectAsState()
     val isOnline = viewModel.isNetworkAvailable()
+    var showVoiceAssistant by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
 
     // Runtime permissions launcher (SMS, Phone State, Contacts & Notifications)
     val permissionsToRequest = mutableListOf(
@@ -102,7 +103,8 @@ fun JarvisMainApp(viewModel: JarvisViewModel) {
         Manifest.permission.SEND_SMS,
         Manifest.permission.READ_SMS,
         Manifest.permission.READ_PHONE_STATE,
-        Manifest.permission.READ_CONTACTS
+        Manifest.permission.READ_CONTACTS,
+        Manifest.permission.RECORD_AUDIO
     ).apply {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             add(Manifest.permission.POST_NOTIFICATIONS)
@@ -140,7 +142,8 @@ fun JarvisMainApp(viewModel: JarvisViewModel) {
                 JarvisMainTopBar(
                     isOnline = isOnline,
                     isAutoReplyOn = isAutoReplyOn,
-                    onHelpClick = { viewModel.navigateToSubScreen(SubScreen.SetupWizard) }
+                    onHelpClick = { viewModel.navigateToSubScreen(SubScreen.SetupWizard) },
+                    onVoiceClick = { showVoiceAssistant = true }
                 )
             }
         },
@@ -160,7 +163,9 @@ fun JarvisMainApp(viewModel: JarvisViewModel) {
                 .padding(innerPadding)
         ) {
             // Routing
-            when (val sub = activeSubScreen) {
+            if (showVoiceAssistant) {
+                VoiceAssistantScreen(onClose = { showVoiceAssistant = false })
+            } else when (val sub = activeSubScreen) {
                 is SubScreen.ApiManager -> ApiManagerScreen(viewModel = viewModel)
                 is SubScreen.MemoryManager -> MemoryManagerScreen(viewModel = viewModel)
                 is SubScreen.ActivityLogs -> ActivityLogsScreen(viewModel = viewModel)
@@ -190,7 +195,8 @@ fun JarvisMainApp(viewModel: JarvisViewModel) {
 fun JarvisMainTopBar(
     isOnline: Boolean,
     isAutoReplyOn: Boolean,
-    onHelpClick: () -> Unit
+    onHelpClick: () -> Unit,
+    onVoiceClick: () -> Unit
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surface,
@@ -243,6 +249,9 @@ fun JarvisMainTopBar(
                 }
             },
             actions = {
+                IconButton(onClick = onVoiceClick) {
+                    Icon(Icons.Filled.Psychology, contentDescription = "دستیار صوتی JARVIS", tint = JarvisCyan)
+                }
                 IconButton(onClick = onHelpClick, modifier = Modifier.testTag("top_bar_help_btn")) {
                     Icon(
                         imageVector = Icons.Filled.HelpOutline,
