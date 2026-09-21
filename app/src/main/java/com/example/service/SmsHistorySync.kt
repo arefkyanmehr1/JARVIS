@@ -92,11 +92,11 @@ class SmsHistorySync(
                     }
 
                     val contactName = ContactHelper.getContactName(context, smsAddress)
-                    val hash = SmsRepository.computeHistoryMessageHash(
+                    // SmsRepository already provides the project's canonical
+                    // message-hash implementation.
+                    val hash = SmsRepository.computeMessageHash(
                         smsAddress,
-                        body,
-                        timestamp,
-                        direction
+                        body
                     )
 
                     smsRepo.insertMessage(
