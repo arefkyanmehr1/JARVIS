@@ -23,6 +23,15 @@ interface SmsDao {
     @Query("SELECT * FROM sms_messages WHERE messageHash = :hash AND timestamp > :sinceTimestamp LIMIT 1")
     suspend fun findDuplicateMessage(hash: String, sinceTimestamp: Long): SmsMessageEntity?
 
+    @Query("SELECT * FROM sms_messages WHERE address = :address AND body = :body AND direction = :direction AND timestamp BETWEEN :fromTimestamp AND :toTimestamp LIMIT 1")
+    suspend fun findMessageAround(
+        address: String,
+        body: String,
+        direction: String,
+        fromTimestamp: Long,
+        toTimestamp: Long
+    ): SmsMessageEntity?
+
     @Query("SELECT COUNT(*) FROM sms_messages WHERE isAiReply = 1 AND timestamp > :sinceTimestamp")
     suspend fun countAiRepliesSince(sinceTimestamp: Long): Int
 
