@@ -142,7 +142,7 @@ class SmsHistorySync(
         when {
             digits.startsWith("00") && digits.length > 2 -> {
                 val country = digits.removePrefix("00")
-                result += "+$country
+                result += "+$country"
                 if (country.startsWith("98") && country.length > 2) {
                     result += "0" + country.removePrefix("98")
                 }
