@@ -61,6 +61,7 @@ import com.example.ui.screens.MemoryManagerScreen
 import com.example.ui.screens.RulesScreen
 import com.example.ui.screens.SettingsScreen
 import com.example.ui.screens.SetupWizardScreen
+import com.example.ui.screens.VoiceAssistantScreen
 import com.example.ui.screens.SmsScreen
 import com.example.ui.theme.JarvisCyan
 import com.example.ui.theme.JarvisTheme
