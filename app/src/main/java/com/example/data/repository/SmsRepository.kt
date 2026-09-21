@@ -58,6 +58,22 @@ class SmsRepository(private val smsDao: SmsDao) {
         return smsDao.findDuplicateMessage(hash, cutoff) != null
     }
 
+    suspend fun hasMessageAround(
+        address: String,
+        body: String,
+        direction: String,
+        timestamp: Long,
+        toleranceMs: Long = 2 * 60 * 1000L
+    ): Boolean {
+        return smsDao.findMessageAround(
+            address = address,
+            body = body,
+            direction = direction,
+            fromTimestamp = timestamp - toleranceMs,
+            toTimestamp = timestamp + toleranceMs
+        ) != null
+    }
+
     suspend fun countAiRepliesToday(): Int {
         // Since start of today (midnight)
         val midnight = System.currentTimeMillis() - (24 * 60 * 60 * 1000L)
